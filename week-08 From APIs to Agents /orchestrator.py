@@ -1,7 +1,8 @@
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
-
+from langchain_openai import ChatOpenAI
+from langchain.tools import tool
 
 load_dotenv()
 
@@ -37,3 +38,15 @@ res = agent.chat.completions.create(
 )
 
 print(res.choices[0].message.content)
+
+researcher_agent = ChatOpenAI(
+
+)
+
+@tool
+def research_over_a_topic(topic: str) -> str :
+    pass
+
+research_tools = [research_over_a_topic]
+
+llm_with_tools = researcher_agent.bind_tools(research_tools)
