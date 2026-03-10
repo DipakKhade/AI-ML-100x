@@ -47,6 +47,18 @@ researcher_agent = ChatOpenAI(
 def research_over_a_topic(topic: str) -> str :
     pass
 
-research_tools = [research_over_a_topic]
 
-llm_with_tools = researcher_agent.bind_tools(research_tools)
+researcher_agent_with_tools = researcher_agent.bind_tools([research_over_a_topic])
+
+
+coder_agent = ChatOpenAI(
+
+)
+
+@tool
+def run_command(cmd: str):
+    pass
+
+coder_agent_with_tools = coder_agent.bind_tools([run_command])
+
+
