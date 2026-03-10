@@ -17,11 +17,14 @@ system_prompt = '''
             1. Researcher Agent
             2. Coding Agent
         
-    you have to respond back me with the follwing type of json on the basis of the task asked by the user
+    you have to respond back me with the follwing type of json on the basis of the task asked by the user, also add a enhanced prmopt 
 
     {
-        agent_to_use: researcher_agent | coding_agent
+        agent_to_use: researcher_agent | coding_agent,
+        prompt: 'this is a enhanced prompt so that agent will do its work properly'
     }
+    
+    do not give reponse in any other format, use above format strictly
 
 '''
 
