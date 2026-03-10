@@ -3,10 +3,55 @@ from dotenv import load_dotenv
 import os
 from langchain_openai import ChatOpenAI
 from langchain.tools import tool
+import json
+import subprocess
 
 load_dotenv()
 
-agent = OpenAI(
+
+researcher_agent = ChatOpenAI(
+    api_key= os.environ.get('OPEN_ROUTER_API_KEY'),
+    base_url='https://openrouter.ai/api/v1'
+)
+
+@tool
+def research_over_a_topic(topic: str) -> str :
+    """
+        this tool will do research from the internet and wikipedia and get the most accurate information
+    """
+    pass
+
+
+researcher_agent_with_tools = researcher_agent.bind_tools([research_over_a_topic])
+
+def call_researcher_agent_with_tools(prompt: str):
+    res = researcher_agent_with_tools.invoke(prompt)
+    print('---------------res from call_researcher_agent_with_tools-------------', res)
+
+coder_agent = ChatOpenAI(
+    api_key= os.environ.get('OPEN_ROUTER_API_KEY'),
+    base_url='https://openrouter.ai/api/v1'
+)
+
+@tool
+def run_command(cmd: list[str]):
+    """
+        this tool will can run a command on a local machine of user
+        you can pass list of command flags to this tool
+        e.g ["ls", "-l"]
+    """
+    result = subprocess.run([cmd], capture_output=True, text=True)
+    print(result.stdout)
+
+coder_agent_with_tools = coder_agent.bind_tools([run_command])
+
+def call_coder_agent_with_tools(prompt: str):
+    print('calling ---------------- call_coder_agent_with_tools')
+    res = coder_agent_with_tools.invoke(prompt)
+    print('---------------res from call_coder_agent_with_tools-------------', res)
+
+
+orchestrator_agent = OpenAI(
     base_url='https://openrouter.ai/api/v1',
     api_key= os.environ.get('OPEN_ROUTER_API_KEY')
 )
@@ -21,44 +66,30 @@ system_prompt = '''
     you have to respond back me with the follwing type of json on the basis of the task asked by the user, also add a enhanced prmopt 
 
     {
-        agent_to_use: researcher_agent | coding_agent,
+        agent_to_use: researcher_agent | coder_agent,
         prompt: 'this is a enhanced prompt so that agent will do its work properly'
     }
     
-    do not give reponse in any other format, use above format strictly
+    do not give reponse in any other format, use above format strictly, also make sure that it can split out a valid json when i do json.loads
 
 '''
 
-res = agent.chat.completions.create(
+res = orchestrator_agent.chat.completions.create(
     model='openrouter/free',
     messages= [
         {'role': 'developer', 'content': system_prompt},
-        {'role': 'user', 'content': 'write a rust fn to add vec of numbers'}
+        {'role': 'user', 'content': 'list all files in my current directory'}
     ]
 )
-
-print(res.choices[0].message.content)
-
-researcher_agent = ChatOpenAI(
-
-)
-
-@tool
-def research_over_a_topic(topic: str) -> str :
-    pass
+orchestrator_agent_res = json.loads(res.choices[0].message.content)
 
 
-researcher_agent_with_tools = researcher_agent.bind_tools([research_over_a_topic])
+agents = {
+    'researcher_agent': call_researcher_agent_with_tools,
+    'coder_agent': call_coder_agent_with_tools 
+}
 
-
-coder_agent = ChatOpenAI(
-
-)
-
-@tool
-def run_command(cmd: str):
-    pass
-
-coder_agent_with_tools = coder_agent.bind_tools([run_command])
-
-
+if orchestrator_agent_res['agent_to_use'] in agents:
+    print('----------------calling-------------', orchestrator_agent_res['agent_to_use'])
+    agents[orchestrator_agent_res['agent_to_use']](orchestrator_agent_res['prompt'])
+    
