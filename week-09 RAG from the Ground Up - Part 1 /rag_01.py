@@ -9,10 +9,12 @@
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+import chromadb
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-data = PyPDFLoader(file_path='/Users/dipakkhade/projects/AI-ML-100x/week-09 RAG from the Ground Up - Part 1 /docs/Mahabharata.pdf')
+
+data = PyPDFLoader(file_path='/Users/dipakkhade/Documents/JOB DOCS/AppointmentLetter_DeepakPermenant.pdf')
 docs = data.load()
-print(docs[:10])
 
 
 txt_splitter = RecursiveCharacterTextSplitter(
@@ -20,5 +22,16 @@ txt_splitter = RecursiveCharacterTextSplitter(
     chunk_overlap=400 
 )
 
-chunks = txt_splitter.split_documents(documents=docs)
+document_chunks = txt_splitter.split_documents(documents=docs)
 
+texts = [doc.page_content for doc in document_chunks]
+
+embeddings_model = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+
+embeddings = embeddings_model.embed_documents(texts=texts)
+print(f"Generated {len(embeddings)} embeddings.")
+
+
+chroma_client = chromadb.HttpClient(host='localhost', port=8000)
+
+print(chroma_client.heartbeat())
